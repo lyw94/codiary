@@ -1,6 +1,6 @@
 # codiary
 
-codiay is code + diary
+codiary is code + diary
 
 literally, this is meaning the records of my footprints
 

@@ -1,6 +1,10 @@
-# codediary
+# codiary
 
-This repository is created for maintaining records of my personally written codes.
+codiay is code + diary
+
+literally, this is meaning the records of my coding footprints
+
+-------------------------------------------------------------------
 
 you can reference these codes if anyone needed.
 

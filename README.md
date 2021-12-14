@@ -2,7 +2,7 @@
 
 codiay is code + diary
 
-literally, this is meaning the records of my coding footprints
+literally, this is meaning the records of my footprints
 
 -------------------------------------------------------------------
 

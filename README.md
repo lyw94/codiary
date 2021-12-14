@@ -2,7 +2,7 @@
 
 codiary is code + diary
 
-literally, this is meaning the records of my footprints
+literally, this is meaning the records of my footprints about coding.
 
 -------------------------------------------------------------------
 

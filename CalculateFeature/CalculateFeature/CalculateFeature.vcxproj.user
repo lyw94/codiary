@@ -1,0 +1,11 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LocalDebuggerCommandArguments>CalculateFeature DB1_LEFT_FEATURE.txt DB1_LEFT_GEOMETRIC.txt DB1_LEFT_AUTHENTIC.txt DB1_LEFT_IMPOSTER.txt 2048</LocalDebuggerCommandArguments>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LocalDebuggerCommandArguments>calculateFeature DB1_LAMP_FEAT.txt db1_lamp_geometric.txt db1_lamp_authentic.txt db1_lamp_imposter.txt 2048</LocalDebuggerCommandArguments>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
+</Project>

@@ -1,0 +1,280 @@
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
+import java.awt.Dialog;
+import java.awt.Frame;
+import java.awt.GridLayout;
+import java.awt.Label;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+
+public class CCFarFrr {
+	// CASE Integer
+	private static int MAX_CASE = 0;
+	private static int AUT_CASE = MAX_CASE/10;
+	private static int IMP_CASE = MAX_CASE - AUT_CASE;
+	private final static int MAX_HD = 1000;
+
+	private double threshold = 0;
+	private int authenticCnt = 0;
+	private int imposterCnt = 0;
+
+	// File Load Buffer Stream
+	private FileReader fr = null;//new FileReader(new File("HD_db.txt"));
+	private BufferedReader in = null;
+
+	// Load File Database
+	private String db[];
+
+
+	private String splitDB[][]; // [MAX_CASE][enroll, target, HD]
+	private String recognition[];
+
+	private HashMap<Double, Integer> authenticHisto = new HashMap<Double, Integer>();
+	private HashMap<Double, Integer> imposterHisto = new HashMap<Double, Integer>(); 
+
+	private Set<Double> autKeySet;
+	private Set<Double> impKeySet;
+
+	private List<Double> autKeyList = new ArrayList<Double>();
+	private List<Double> impKeyList = new ArrayList<Double>();
+
+	private Iterator<Double> autIter;
+	private Iterator<Double> impIter;
+
+
+	public CCFarFrr(String db_name) {
+		File f = null;
+		try {
+			f = new File(db_name);
+			fr = new FileReader(f);
+			in = new BufferedReader(fr);
+		} catch (FileNotFoundException e) {
+			System.out.println("DB is not found");
+			e.printStackTrace();
+		}
+	}
+
+	private String[] getLine() {
+		LinkedList<String> l_str = new LinkedList<String>();
+		String[] o_str = null; 
+		try {
+			while(in.ready()) {
+				l_str.add(in.readLine());
+				MAX_CASE++;
+			}
+			o_str = new String[MAX_CASE];
+			l_str.toArray(o_str);
+		} catch (IOException e) {
+			System.out.println("Read All Line");
+		}
+		System.out.println("MAX Case : "+MAX_CASE);
+
+		AUT_CASE = MAX_CASE/10;
+		IMP_CASE = MAX_CASE - AUT_CASE;
+		
+		for(int i = 0; i < MAX_CASE; i++)
+			System.out.println(o_str[i]);
+		return o_str.clone();
+	}
+	public void separateAccount() {
+		splitDB = new String[MAX_CASE][];
+		db = new String[MAX_CASE];
+		db = getLine();
+		//System.out.println(db[i]);
+		for (int i = 0; i < db.length; i++) {
+			splitDB[i] = db[i].split("\t");
+		}
+	}
+	public void countRecognition() {
+		String target = null;
+		String enroll = null;
+
+		for(int i = 0; i < MAX_CASE; i++) {
+			target = splitDB[i][0];
+			enroll = splitDB[i][1];
+
+			if(target.regionMatches(0, enroll, 0, 9)) {
+				recognition[i] = String.valueOf(1); // 본인 인식
+			}else {
+				recognition[i] = String.valueOf(0); // 타인 인식
+			}
+			//			System.out.printf("%16s %20s %s %s\n", splitDB[i][0], splitDB[i][1], splitDB[i][2], recognition[i]);
+		}
+	}
+
+	public void separateHisto() {
+		double dTemp = 0.0;
+
+		for(int i = 0; i < MAX_CASE; i++) {
+			dTemp = Double.parseDouble(splitDB[i][2]);
+
+			if(recognition[i].equals("1")) {				// Authentics
+				if(authenticHisto.containsKey(dTemp))
+					authenticHisto.put(dTemp, authenticHisto.get(dTemp).intValue()+1);
+				else
+					authenticHisto.put(dTemp, 1);
+				authenticCnt++;
+
+			}
+			else if(recognition[i].equals("0")) {		// Imposter
+				if(imposterHisto.containsKey(dTemp))
+					imposterHisto.put(dTemp, imposterHisto.get(dTemp).intValue()+1);
+				else
+					imposterHisto.put(dTemp, 1);
+				imposterCnt++;
+			}
+		}
+
+		System.out.println("Authentic : "+authenticCnt+", Imposter : "+imposterCnt);
+		// HD 값들 얻기
+		autKeySet = authenticHisto.keySet();
+		impKeySet = imposterHisto.keySet();
+
+		// 정렬을 위한 리스트로 변형
+		autKeyList.addAll(autKeySet);
+		impKeyList.addAll(impKeySet);
+
+		// 정렬
+		Collections.sort(autKeyList);
+		Collections.sort(impKeyList);
+
+		/*		autIter = autKeyList.iterator();
+		impIter = impKeyList.iterator();
+		 */
+		int sum = 0;
+
+		/*		// 디버깅용 출력.
+		while(autIter.hasNext()) {
+			Double k = autIter.next();
+			int v = authenticHisto.get(k);
+
+			System.out.println(k + " " + v);
+			sum += v;
+		}
+		System.out.println("SUM : " + sum);
+		System.out.println();
+		sum = 0;
+		while(impIter.hasNext()) {
+			Double k = impIter.next();
+			int v = imposterHisto.get(k);
+
+			System.out.println(k + " " + v);
+			sum += v;
+		}
+
+		System.out.println("SUM : " + sum);*/
+	}
+
+	public void setThreshold(double threshold) {
+		this.threshold = threshold;
+	}
+
+	public double[] calculateEER() {
+		double authenticSumHD = 0.0;
+		double authenticAvgHD = 0.0;
+		double authenticSumOfSquare = 0.0;
+		double authenticStandardDeviation = 0;
+
+		double imposterSumHD = 0.0;
+		double imposterAvgHD = 0.0;
+		double imposterSumOfSquare = 0.0;
+		double imposterStandardDeviation = 0;
+
+		double differenceOfMeans = 0.0;
+		double meanOfStds = 0.0;
+
+		double authenticMinHD = 100.0;
+		double authenticMaxHD = 0.0;
+		double imposterMinHD = 100.0;
+		double imposterMaxHD = 0.0;
+		double dPrime = 0.0;
+		double EER = 0.0;
+
+		double[] returnVal =  new  double[2];
+
+		int falseAcceptCnt = 0;
+		double FAR = 100;
+		int falseRejectCnt = 0;
+		double FRR = 100;
+
+		autIter = autKeyList.iterator();
+		impIter = impKeyList.iterator();
+		// Key -> HD value
+		// autIter <= autKeyList, impIter <= impKeyList
+
+		// Authentic
+		while(autIter.hasNext()) {
+			double HD = autIter.next();
+
+			authenticSumHD += HD;
+			authenticSumOfSquare += Math.pow(HD, 2);
+			if(HD > threshold) {
+				falseRejectCnt += authenticHisto.get(HD).intValue();
+			}
+			if(HD < authenticMinHD)
+				authenticMinHD = HD;
+			if(HD > authenticMaxHD)
+				authenticMaxHD = HD;
+		}
+
+		authenticAvgHD = authenticSumHD/authenticCnt;
+		authenticStandardDeviation = Math.sqrt((authenticSumOfSquare/authenticCnt)-(Math.pow(authenticAvgHD, 2)));
+
+		// Imposter
+		while(impIter.hasNext()) {
+			double HD = impIter.next();
+
+			imposterSumHD += HD;
+			imposterSumOfSquare += Math.pow(HD, 2);
+			if(HD < threshold) {
+				falseAcceptCnt += imposterHisto.get(HD).intValue();
+			}
+			if(HD < imposterMinHD)
+				imposterMinHD = HD;
+			if(HD > imposterMaxHD)
+				imposterMaxHD = HD;
+
+		}
+
+		imposterAvgHD = imposterSumHD/imposterCnt;
+		imposterStandardDeviation = Math.sqrt((imposterSumOfSquare/imposterCnt)-(Math.pow(imposterAvgHD, 2)));
+
+		differenceOfMeans = authenticAvgHD - imposterAvgHD;
+		meanOfStds = Math.sqrt((Math.pow(authenticStandardDeviation, 2)+Math.pow(imposterStandardDeviation, 2))*0.5);
+
+		if(differenceOfMeans < 0) differenceOfMeans *= -1;
+
+		FAR = (falseAcceptCnt/(double)imposterCnt)*100.;
+		FRR = (falseRejectCnt/(double)authenticCnt)*100;
+		EER = (FAR + FRR)/(double)2;
+		dPrime = differenceOfMeans/meanOfStds;
+
+		returnVal[0] = EER;
+		returnVal[1] = dPrime;
+
+		/*		System.out.println();
+		System.out.printf("Threshold %4f\nFAR = %4f%%\nFRR = %4f%% \n", threshold, FAR, FRR);
+		System.out.printf("EER = %f%% \nAuthentic_HD_MAX = %3f \nAuthentic_HD_MIN = %3f\n", EER, authenticMaxHD, authenticMinHD);
+		System.out.println("===============  ============================");
+		System.out.printf("Imposter_HD_MAX = %3f \nImposter_HD_MIN = %3f\n" ,imposterMaxHD,imposterMinHD);
+		System.out.println("===========================================");
+		System.out.printf("Authentic_Avg_HD = %4f\nAuthentic_Std_HD = %4f\n",authenticAvgHD,authenticStandardDeviation);
+		System.out.println("===========================================");
+		System.out.printf("Imposter_Avg_HD = %4f\nImposter_Std_HD = %4f\n",imposterAvgHD,imposterStandardDeviation);
+		System.out.println("===========================================");
+		System.out.printf("d' = %4f\n",dPrime);
+		System.out.println("===========================================");*/
+
+		return returnVal;
+	}
+}
